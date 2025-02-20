@@ -52,7 +52,7 @@ python ./modules/inferdemo.py -C ./configs/infer.toml -S1 ./dataset/test_dataset
 ### 在线网页Demo
 为方便网页展示，相关部分在./deploy文件夹下部署。若需要部署在移动端设备，需要自己训练较小参数量的模型满足实时推理时间需要。经测试可以通过libtorch在安卓端使用JAVA部署，也可以通过NCNN在移动端设备进行部署。
 
-运行./deploy/infer_fastapi.py, 即可在网页实现部署。为方便体验，我将该服务映射在公网IP上，可以通过以下网址进行访问：[http://67.230.171.41:7999]()
+运行./deploy/infer_fastapi.py, 即可在网页实现部署。为方便体验，我将该服务映射在公网IP上，可以通过以下网址进行访问：[http://67.230.171.41:7999](http://67.230.171.41:7999)。PS:(别攻击我，后端菜鸡经不起肉鸡攻击。)
 
 
 ## 数据准备
