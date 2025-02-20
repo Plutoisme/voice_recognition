@@ -1,0 +1,47 @@
+[meta]
+seed = 0 # random seed
+use_amp = false # use automatic mixed precision, it will benefits Tensor Core-enabled GPU (e.g. Volta, Turing, Ampere). 2-3X speedup
+num_workers = 8 # 使用线程数
+pin_memory = true # 是否使用锁页内存， 对性能较好的服务器建议设置为true
+num_epochs = 70
+batch_size = 256
+num_frames = 200 # 训练使用的帧数
+train_list_path = "/home/lizhinan/project/voice_recognition/dataset/train_list_zhvoice_and_voxceleb2.txt"
+test_list_path = '/home/lizhinan/project/voice_recognition/dataset/test_list_zhvoice.txt'
+musan_path = "/home/lizhinan/project/voice_recognition/dataset/musan"
+rir_path = "/home/lizhinan/project/voice_recognition/dataset/RIRS_NOISES/simulated_rirs"
+save_model_dir = '/home/lizhinan/project/voice_recognition/models'
+experiment_name = '2025_test'
+# preload model
+preloaded_model_path = ""
+
+[model]
+path = "modules.BoneModel.ECAPA_TDNN" # 模型初始化需要的类路径
+[model.args]
+C = 512
+
+[loss_function]
+name = "AAMsoftmax"
+path = 'modules.loss.AAMsoftmax'
+[loss_function.args]
+#n_class = 3242
+#n_class = 5994
+n_class = 9236
+m = 0.2
+s = 30
+
+[optimizer]
+lr = 0.002
+weight_decay = 1e-5
+
+
+[trainer]
+path = "modules.trainer.trainer.Trainer"
+[trainer.args]
+# Set Finetune
+finetune = false
+pretrain_model_path = ''
+clip_grad_norm_ornot = true
+clip_grad_norm_value = 10
+
+

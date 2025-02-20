@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <!-- head部分保持不变 -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>声纹识别系统</title>
+    <style>
+        <style>
+        /* 基础样式 */
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            padding: 20px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .success {
+            background: #dff0d8;
+            color: #3c763d;
+            border: 1px solid #d6e9c6;
+        }
+
+        .error {
+            background: #f2dede;
+            color: #a94442;
+            border: 1px solid #ebccd1;
+        }
+    </style>
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>声纹识别系统</h1>
+
+        <!-- 注册模块 -->
+        <div class="section">
+            <h2>注册新用户</h2>
+            <form id="enrollForm" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="enrollName">姓名：</label>
+                    <input type="text" id="enrollName" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="enrollAudio">上传注册音频（.wav）:</label>
+                    <input type="file" id="enrollAudio" name="audio" accept="audio/wav,.wav" required>
+                </div>
+                <button type="submit">注册</button>
+            </form>
+            <div id="enrollResult" class="result"></div>
+        </div>
+
+        <!-- 验证模块 -->
+        <div class="section">
+            <h2>验证用户身份</h2>
+            <form id="verifyForm" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="verifyName">姓名：</label>
+                    <input type="text" id="verifyName" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="verifyAudio">上传验证音频（.wav）：</label>
+                    <input type="file" id="verifyAudio" name="audio" accept="audio/wav,.wav" required>
+                </div>
+                <button type="submit">验证</button>
+            </form>
+            <div id="verifyResult" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8002';
+
+        // 通用的表单处理函数
+        async function handleFormSubmit(formId, endpoint) {
+            const form = document.getElementById(formId);
+            const resultElement = document.getElementById(formId.replace('Form', 'Result'));
+            
+            try {
+                // 显示处理中状态
+                resultElement.style.display = 'block';
+                resultElement.className = 'result';
+                resultElement.innerHTML = '正在处理...';
+
+                // 获取表单数据
+                const nameInput = form.querySelector('input[type="text"]');
+                const fileInput = form.querySelector('input[type="file"]');
+                
+                const name = nameInput.value.trim();
+                const audioFile = fileInput.files[0];
+
+                // 验证表单数据
+                if (!name) {
+                    throw new Error('请输入姓名');
+                }
+                if (!audioFile) {
+                    throw new Error('请选择音频文件');
+                }
+                if (!audioFile.name.toLowerCase().endsWith('.wav')) {
+                    throw new Error('请选择WAV格式的音频文件');
+                }
+
+                // 构建FormData
+                const formData = new FormData();
+                formData.append('name', name);
+                formData.append('audio', audioFile, audioFile.name);
+
+                // 打印调试信息
+                console.log(`提交到 ${endpoint}:`);
+                console.log('- 姓名:', name);
+                console.log('- 文件:', audioFile.name, `(${audioFile.size} bytes)`);
+
+                // 发送请求
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                console.log('响应状态:', response.status);
+
+                // 获取响应文本
+                const responseText = await response.text();
+                console.log('原始响应:', responseText);
+
+                // 解析响应
+                let result;
+                try {
+                    result = JSON.parse(responseText);
+                } catch (e) {
+                    console.error('JSON解析失败:', e);
+                    result = { detail: responseText };
+                }
+
+                // 显示结果
+                resultElement.classList.remove('error', 'success');
+
+                if (response.ok) {
+                    resultElement.classList.add('success');
+                    if (endpoint === '/verify') {
+                        resultElement.innerHTML = `
+                            ${result.message}<br>
+                            相似度得分: ${result.similarity_score.toFixed(4)}<br>
+                            当前阈值: ${result.threshold}
+                        `;
+                    } else {
+                        resultElement.innerHTML = result.message || '操作成功';
+                    }
+                } else {
+                    resultElement.classList.add('error');
+                    if (result.detail) {
+                        if (Array.isArray(result.detail)) {
+                            resultElement.innerHTML = result.detail
+                                .map(err => err.msg || (typeof err === 'string' ? err : JSON.stringify(err)))
+                                .join('<br>');
+                        } else {
+                            resultElement.innerHTML = result.detail;
+                        }
+                    } else {
+                        resultElement.innerHTML = '请求失败，请重试';
+                    }
+                }
+            } catch (error) {
+                console.error('请求错误:', error);
+                resultElement.style.display = 'block';
+                resultElement.classList.add('error');
+                resultElement.innerHTML = error.message || '请求失败，请重试';
+            }
+        }
+
+        // 注册表单提交处理
+        document.getElementById('enrollForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await handleFormSubmit('enrollForm', '/enroll');
+        });
+
+        // 验证表单提交处理
+        document.getElementById('verifyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await handleFormSubmit('verifyForm', '/verify');
+        });
+    </script>
+</body>
+</html>

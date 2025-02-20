@@ -1,0 +1,14 @@
+[model]
+path = "/home/lizhinan/project/voice_recognition/models/Ecapatdnn_1024_se_zhvoice+vox_0301/checkpoints/model_0070.pth" # 模型初始化需要的类路径
+initial_path = "modules.BoneModel.ECAPA_TDNN" # 模型初始化需要的类路径
+[model.args]
+C = 1024
+
+[infer_set]
+threshold = 0.43
+frame_length = 200
+
+
+
+
+
